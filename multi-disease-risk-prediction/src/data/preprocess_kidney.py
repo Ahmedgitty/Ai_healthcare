@@ -20,7 +20,7 @@ Steps:
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import StandardScaler
 from imblearn.over_sampling import SMOTE
 import joblib
 import os
@@ -42,29 +42,84 @@ def load_data():
 def preprocess(df):
     """
     Clean and preprocess the kidney disease dataset.
-
-    TODO (Member 3):
-    1. Drop the 'id' column if present
-    2. Strip extra spaces from string columns (common issue in this dataset)
-       Hint: df[col] = df[col].str.strip()
-    3. Encode binary categorical columns like 'rbc', 'pc', 'pcc', 'ba', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane'
-       Hint: use LabelEncoder or map {'yes': 1, 'no': 0}
-    4. For numeric columns that loaded as object due to typos, convert carefully
-       Hint: pd.to_numeric(df[col], errors='coerce')
-    5. Fill missing values:
-       - Numeric columns: fill with median
-       - Categorical columns: fill with mode
-    6. Encode target: 'ckd' → 1, 'notckd' → 0
+    
+    Handles:
+    - Empty strings (missing values in CSV)
+    - Binary yes/no columns: htn, dm, cad, pe, ane
+    - Categorical columns: rbc/pc (normal/abnormal), pcc/ba (present/notpresent), appet (good/poor)
+    - Sparse columns (drop if >50% missing)
+    - Target encoding: ckd→1, notckd→0
     """
 
     # Step 1: Drop id column if it exists
     if 'id' in df.columns:
         df = df.drop('id', axis=1)
 
-    # TODO: Complete steps 2-6 above
+    # Step 2: Replace empty strings with NaN
+    df = df.replace('', np.nan)
+
+    # Step 3: Strip spaces from all string values
+    for col in df.columns:
+        if pd.api.types.is_string_dtype(df[col]):
+            df[col] = df[col].str.strip()
+
+    # Step 4: Drop columns with >50% missing values (too sparse to be useful)
+    threshold = 0.5 * len(df)
+    cols_before = len(df.columns)
+    df = df.dropna(axis=1, thresh=threshold)
+    print(f"Dropped {cols_before - len(df.columns)} sparse columns")
+
+    # Step 5: Encode binary yes/no columns
+    binary_yes_no = ['htn', 'dm', 'cad', 'pe', 'ane']
+    for col in binary_yes_no:
+        if col in df.columns:
+            df[col] = df[col].map({'yes': 1, 'no': 0})
+
+    # Step 6: Encode normal/abnormal columns (rbc, pc)
+    for col in ['rbc', 'pc']:
+        if col in df.columns:
+            df[col] = df[col].map({'normal': 0, 'abnormal': 1})
+
+    # Step 7: Encode present/notpresent columns (pcc, ba)
+    for col in ['pcc', 'ba']:
+        if col in df.columns:
+            df[col] = df[col].map({'notpresent': 0, 'present': 1})
+
+    # Step 8: Encode appetite (good=1, poor=0)
+    if 'appet' in df.columns:
+        df['appet'] = df['appet'].map({'good': 1, 'poor': 0})
+
+    # Step 9: Encode target variable FIRST (before numeric conversion)
+    # Strip extra whitespace/tabs that may exist in the target column
+    df['classification'] = df['classification'].str.strip()
+    df['classification'] = df['classification'].map({'ckd': 1, 'notckd': 0})
+    # Drop any rows where classification is still NaN
+    df = df.dropna(subset=['classification'])
+    df['classification'] = df['classification'].astype(int)
+
+    # Step 10: Convert any remaining string columns to numeric
+    for col in df.columns:
+        if pd.api.types.is_string_dtype(df[col]):
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+    # Step 11: Fill ALL numeric missing values with median
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]) and df[col].isnull().sum() > 0:
+            median_val = df[col].median()
+            if not pd.isna(median_val):
+                df[col] = df[col].fillna(median_val)
+            else:
+                # Column is all NaN, drop it
+                df = df.drop(col, axis=1)
+
+    # Safety: drop any remaining rows with NaN
+    df = df.dropna()
+    df = df.reset_index(drop=True)
 
     print("\nAfter cleaning:")
-    print(df.isnull().sum())
+    print(f"Shape: {df.shape}")
+    print(f"Missing values remain:\n{df.isnull().sum()}")
+    print(f"Class distribution:\n{df['classification'].value_counts()}")
     return df
 
 def split_and_smote(df):
