@@ -33,32 +33,36 @@ multi-disease-risk-prediction/
 ├── notebooks/                # Jupyter notebooks for EDA and experimentation
 │   ├── 01_eda_diabetes.ipynb
 │   ├── 02_eda_heart.ipynb
-│   ├── 03_eda_kidney.ipynb
-│   └── 04_model_comparison.ipynb
+│   └── 03_eda_kidney.ipynb
 │
 ├── src/
+│   ├── __init__.py
 │   ├── data/                 # Data loading and preprocessing scripts
+│   │   ├── __init__.py
 │   │   ├── preprocess_diabetes.py
 │   │   ├── preprocess_heart.py
 │   │   └── preprocess_kidney.py
 │   │
 │   ├── models/               # Model training scripts
+│   │   ├── __init__.py
 │   │   ├── train_diabetes.py
 │   │   ├── train_heart.py
 │   │   ├── train_kidney.py
 │   │   └── evaluate.py       # Shared evaluation utilities
 │   │
 │   ├── explainability/       # SHAP and LIME scripts
+│   │   ├── __init__.py
 │   │   ├── shap_explainer.py
 │   │   └── lime_explainer.py
 │   │
 │   └── dashboard/            # Streamlit app
+│       ├── __init__.py
 │       ├── app.py            # Main entry point
-│       ├── pages/
-│       │   ├── diabetes_page.py
-│       │   ├── heart_page.py
-│       │   └── kidney_page.py
-│       └── utils.py          # Shared dashboard utilities
+│       └── views/
+│           ├── __init__.py
+│           ├── diabetes_page.py
+│           ├── heart_page.py
+│           └── kidney_page.py
 │
 ├── models/
 │   └── saved_models/         # Trained .joblib model files (NOT committed to Git)
@@ -72,7 +76,7 @@ multi-disease-risk-prediction/
 │   ├── DATASETS.md           # Where to download datasets and how to place them
 │   └── LEARNINGS.md          # Team notes on concepts learned week by week
 │
-├── .gitignore
+├── .gitignore                # Git ignore rules
 ├── requirements.txt
 └── README.md
 ```

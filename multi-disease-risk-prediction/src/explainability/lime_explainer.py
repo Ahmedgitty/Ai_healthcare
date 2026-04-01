@@ -15,6 +15,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import joblib
 import os
+import sys
+
+# Add src to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 MODELS_DIR = "models/saved_models/"
 FIGURES_DIR = "results/figures/"
@@ -102,9 +106,90 @@ def get_lime_for_patient(lime_explainer, model, patient_data, feature_names):
     return explanation.as_list(), explanation.as_pyplot_figure()
 
 
+def explain_disease_lime(disease_name, model, X_train, X_test, feature_names, num_patients=3):
+    """
+    Full LIME explanation pipeline for one disease.
+
+    Args:
+        disease_name: e.g. 'diabetes'
+        model: trained model
+        X_train: training data (for LIME background)
+        X_test: test data (patients to explain)
+        feature_names: list of feature names
+        num_patients: how many patients to explain (default 3)
+    """
+    print(f"\n{'='*50}")
+    print(f"  LIME Explanation — {disease_name.upper()}")
+    print(f"{'='*50}")
+
+    # Create LIME explainer using training data
+    lime_explainer = create_lime_explainer(X_train, feature_names)
+
+    # Explain first N patients
+    for i in range(min(num_patients, len(X_test))):
+        explain_patient_lime(
+            lime_explainer, model, X_test[i],
+            feature_names, disease_name, patient_index=i
+        )
+
+    return lime_explainer
+
+
 # ── Run directly to generate LIME plots ──────────────────────────────────────
 if __name__ == "__main__":
-    # TODO (Member 4):
-    # Similar to shap_explainer.py — load preprocessed data, create explainer,
-    # and run explain_patient_lime() for the first few patients of each disease.
-    pass
+
+    # ── Diabetes ──────────────────────────────────────────────────────────
+    print("\n" + "═"*60)
+    print("  DIABETES — LIME ANALYSIS")
+    print("═"*60)
+    try:
+        from data.preprocess_diabetes import load_data as load_diabetes, preprocess as prep_diabetes
+        from data.preprocess_diabetes import split_and_smote as split_diabetes, scale_features as scale_diabetes
+
+        df = load_diabetes()
+        df = prep_diabetes(df)
+        X_train, X_test, y_train, y_test, features = split_diabetes(df)
+        X_train_s, X_test_s = scale_diabetes(X_train, X_test)
+
+        model = joblib.load(f"{MODELS_DIR}rf_diabetes.joblib")
+        explain_disease_lime("diabetes", model, X_train_s, X_test_s, features)
+    except Exception as e:
+        print(f"⚠️  Diabetes LIME failed: {e}")
+
+    # ── Heart Disease ─────────────────────────────────────────────────────
+    print("\n" + "═"*60)
+    print("  HEART DISEASE — LIME ANALYSIS")
+    print("═"*60)
+    try:
+        from data.preprocess_heart import load_data as load_heart, preprocess as prep_heart
+        from data.preprocess_heart import split_and_smote as split_heart, scale_features as scale_heart
+
+        df = load_heart()
+        df = prep_heart(df)
+        X_train, X_test, y_train, y_test, features = split_heart(df)
+        X_train_s, X_test_s = scale_heart(X_train, X_test)
+
+        model = joblib.load(f"{MODELS_DIR}rf_heart.joblib")
+        explain_disease_lime("heart", model, X_train_s, X_test_s, features)
+    except Exception as e:
+        print(f"⚠️  Heart LIME failed: {e}")
+
+    # ── Kidney Disease ────────────────────────────────────────────────────
+    print("\n" + "═"*60)
+    print("  KIDNEY DISEASE — LIME ANALYSIS")
+    print("═"*60)
+    try:
+        from data.preprocess_kidney import load_data as load_kidney, preprocess as prep_kidney
+        from data.preprocess_kidney import split_and_smote as split_kidney, scale_features as scale_kidney
+
+        df = load_kidney()
+        df = prep_kidney(df)
+        X_train, X_test, y_train, y_test, features = split_kidney(df)
+        X_train_s, X_test_s = scale_kidney(X_train, X_test)
+
+        model = joblib.load(f"{MODELS_DIR}rf_kidney.joblib")
+        explain_disease_lime("kidney", model, X_train_s, X_test_s, features)
+    except Exception as e:
+        print(f"⚠️  Kidney LIME failed: {e}")
+
+    print("\n✅ LIME analysis complete for all diseases!")

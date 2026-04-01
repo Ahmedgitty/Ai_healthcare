@@ -14,6 +14,10 @@ import joblib
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
+
+# Add src to path for imports
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 MODELS_DIR = "models/saved_models/"
 FIGURES_DIR = "results/figures/"
@@ -45,9 +49,13 @@ def plot_global_summary(explainer, X_test, feature_names, disease_name, model_na
     """
     shap_values = explainer.shap_values(X_test)
 
-    # For binary classifiers, shap_values may be a list [class0, class1]
+    # Handle different SHAP return formats:
+    # - Old API: list of arrays [class0_array, class1_array]
+    # - New API: ndarray with shape (n_samples, n_features, n_classes)
     if isinstance(shap_values, list):
         shap_values = shap_values[1]  # Use class 1 (disease present)
+    elif hasattr(shap_values, 'ndim') and shap_values.ndim == 3:
+        shap_values = shap_values[:, :, 1]  # Select class 1
 
     plt.figure()
     shap.summary_plot(
@@ -62,16 +70,52 @@ def plot_global_summary(explainer, X_test, feature_names, disease_name, model_na
     return shap_values
 
 
+def plot_bar_summary(explainer, X_test, feature_names, disease_name, model_name):
+    """
+    Bar plot showing mean absolute SHAP values per feature.
+    Simpler view of global feature importance.
+    """
+    shap_values = explainer.shap_values(X_test)
+
+    if isinstance(shap_values, list):
+        shap_values = shap_values[1]
+    elif hasattr(shap_values, 'ndim') and shap_values.ndim == 3:
+        shap_values = shap_values[:, :, 1]
+
+    plt.figure()
+    shap.summary_plot(
+        shap_values, X_test,
+        feature_names=feature_names,
+        plot_type="bar",
+        show=False
+    )
+    path = f"{FIGURES_DIR}shap_bar_{disease_name}_{model_name}.png"
+    plt.savefig(path, bbox_inches='tight')
+    plt.close()
+    print(f"✅ SHAP bar plot saved: {path}")
+
+
 def plot_waterfall_single_patient(explainer, X_test, shap_values, patient_index, feature_names, disease_name):
     """
     Waterfall plot for a single patient showing which features pushed
     the prediction up (red) or down (blue).
     """
+    expected = explainer.expected_value
+    if isinstance(expected, list):
+        expected = expected[1]
+    elif hasattr(expected, '__len__') and len(expected) > 1:
+        expected = expected[1]
+
+    # Ensure we have 1D shap values for a single patient
+    patient_shap = shap_values[patient_index]
+    if hasattr(patient_shap, 'ndim') and patient_shap.ndim == 2:
+        patient_shap = patient_shap[:, 1]  # Select class 1
+
+    plt.figure()
     shap.waterfall_plot(
         shap.Explanation(
-            values=shap_values[patient_index],
-            base_values=explainer.expected_value if not isinstance(explainer.expected_value, list)
-                        else explainer.expected_value[1],
+            values=patient_shap,
+            base_values=float(expected),
             data=X_test[patient_index],
             feature_names=feature_names
         ),
@@ -92,9 +136,19 @@ def explain_disease(disease_name, X_test, feature_names):
     print(f"  SHAP Explanation — {disease_name.upper()}")
     print(f"{'='*50}")
 
-    model = joblib.load(f"{MODELS_DIR}rf_{disease_name}.joblib")
+    model_path = f"{MODELS_DIR}rf_{disease_name}.joblib"
+    if not os.path.exists(model_path):
+        print(f"⚠️  Model not found: {model_path}. Run train_{disease_name}.py first.")
+        return None, None
+
+    model = joblib.load(model_path)
     explainer = get_shap_explainer(model, X_test, model_type="tree")
+
+    # Global summary (dot plot)
     shap_values = plot_global_summary(explainer, X_test, feature_names, disease_name, "rf")
+
+    # Global summary (bar plot)
+    plot_bar_summary(explainer, X_test, feature_names, disease_name, "rf")
 
     # Explain first 3 patients as examples
     for i in range(min(3, len(X_test))):
@@ -120,14 +174,18 @@ def get_shap_for_patient(model, patient_data, feature_names):
 
     if isinstance(shap_values, list):
         shap_values = shap_values[1]
+    elif hasattr(shap_values, 'ndim') and shap_values.ndim == 3:
+        shap_values = shap_values[:, :, 1]
 
     expected = explainer.expected_value
     if isinstance(expected, list):
         expected = expected[1]
+    elif hasattr(expected, '__len__') and len(expected) > 1:
+        expected = expected[1]
 
     return shap.Explanation(
         values=shap_values[0],
-        base_values=expected,
+        base_values=float(expected),
         data=patient_data[0],
         feature_names=feature_names
     )
@@ -135,14 +193,72 @@ def get_shap_for_patient(model, patient_data, feature_names):
 
 # ── Run directly to generate all SHAP plots ──────────────────────────────────
 if __name__ == "__main__":
-    # TODO (Member 4):
-    # Import preprocessing functions for each disease and get X_test, feature_names
-    # Then call explain_disease() for each disease
-    #
-    # Example:
-    # from src.data.preprocess_diabetes import load_data, preprocess, split_and_smote, scale_features
-    # df = load_data(); df = preprocess(df)
-    # X_train, X_test, y_train, y_test, features = split_and_smote(df)
-    # X_train_s, X_test_s = scale_features(X_train, X_test)
-    # explain_disease("diabetes", X_test_s, features)
-    pass
+
+    # ── Diabetes ──────────────────────────────────────────────────────────
+    print("\n" + "═"*60)
+    print("  DIABETES — SHAP ANALYSIS")
+    print("═"*60)
+    try:
+        from data.preprocess_diabetes import load_data as load_diabetes, preprocess as prep_diabetes
+        from data.preprocess_diabetes import split_and_smote as split_diabetes, scale_features as scale_diabetes
+
+        df = load_diabetes()
+        df = prep_diabetes(df)
+        X_train, X_test, y_train, y_test, features = split_diabetes(df)
+        X_train_s, X_test_s = scale_diabetes(X_train, X_test)
+        explain_disease("diabetes", X_test_s, features)
+    except Exception as e:
+        print(f"⚠️  Diabetes SHAP failed: {e}")
+
+    # ── Heart Disease ─────────────────────────────────────────────────────
+    print("\n" + "═"*60)
+    print("  HEART DISEASE — SHAP ANALYSIS")
+    print("═"*60)
+    try:
+        from data.preprocess_heart import load_data as load_heart, preprocess as prep_heart
+        from data.preprocess_heart import split_and_smote as split_heart, scale_features as scale_heart
+
+        df = load_heart()
+        df = prep_heart(df)
+        X_train, X_test, y_train, y_test, features = split_heart(df)
+        X_train_s, X_test_s = scale_heart(X_train, X_test)
+        explain_disease("heart", X_test_s, features)
+    except Exception as e:
+        print(f"⚠️  Heart SHAP failed: {e}")
+
+    # ── Kidney Disease ────────────────────────────────────────────────────
+    print("\n" + "═"*60)
+    print("  KIDNEY DISEASE — SHAP ANALYSIS")
+    print("═"*60)
+    try:
+        from data.preprocess_kidney import load_data as load_kidney, preprocess as prep_kidney
+        from data.preprocess_kidney import split_and_smote as split_kidney, scale_features as scale_kidney
+
+        df = load_kidney()
+        df = prep_kidney(df)
+        X_train, X_test, y_train, y_test, features = split_kidney(df)
+        X_train_s, X_test_s = scale_kidney(X_train, X_test)
+        explain_disease("kidney", X_test_s, features)
+    except Exception as e:
+        print(f"⚠️  Kidney SHAP failed: {e}")
+
+    print("\n✅ SHAP analysis complete for all diseases!")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
