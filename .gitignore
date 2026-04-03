@@ -16,11 +16,11 @@ env/
 .ipynb_checkpoints/
 
 # ── Data (raw & processed – too large for Git) ───────
-data/raw/
-data/processed/
+# data/raw/
+# data/processed/
 
 # ── Trained models (binary blobs) ────────────────────
-models/saved_models/
+# models/saved_models/
 
 # ── IDE / editor files ───────────────────────────────
 .vscode/
