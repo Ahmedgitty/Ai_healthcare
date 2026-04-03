@@ -36,8 +36,7 @@ st.sidebar.markdown("**Tech Stack:**")
 st.sidebar.markdown("- Scikit-learn, XGBoost")
 st.sidebar.markdown("- SHAP + LIME (XAI)")
 st.sidebar.markdown("- Streamlit")
-st.sidebar.markdown("---")
-st.sidebar.markdown("*AIML Subject Project*")
+
 
 # ── Page Routing ──────────────────────────────────────────────────────────────
 if page == "🏠 Home":

@@ -1,6 +1,6 @@
 # 🏥 Explainable Multi-Disease Risk Prediction System
 
-> AI in Healthcare | AIML Subject Project | Team of 5
+> AI in Healthcare | Team of 5
 
 ---
 
