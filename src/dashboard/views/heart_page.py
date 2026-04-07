@@ -1,7 +1,4 @@
 """
-Heart Disease Page — Streamlit Dashboard
-Member 5's responsibility
-
 Shows:
 - Patient input sliders/selectboxes
 - Risk prediction + probability
@@ -19,7 +16,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
-# Feature names AFTER one-hot encoding (matches what models were trained on)
 FEATURE_NAMES = [
     "Age", "Sex", "RestBP", "Chol", "Fbs", "RestECG", "MaxHR",
     "ExAng", "Oldpeak", "Slope", "Ca",
@@ -29,8 +25,7 @@ FEATURE_NAMES = [
 
 MODELS_DIR = "models/saved_models/"
 
-# Base validation rules for numeric heart inputs.
-# Keep medically plausible bounds and allow valid zero values where appropriate.
+# Base validation rules 
 HEART_VALIDATION_RULES = {
     "Age": (20, 80),
     "RestBP": (80, 200),
@@ -152,7 +147,6 @@ def show():
         st.session_state["h_patient_scaled"] = patient_scaled
         st.session_state["h_patient_input"] = patient_input
 
-    # ── Display results (from session state) ──────────────────────────────────
     if "h_probability" in st.session_state:
         probability = st.session_state["h_probability"]
         prediction = st.session_state["h_prediction"]
@@ -169,7 +163,6 @@ def show():
             st.metric("Risk Probability", f"{probability*100:.1f}%")
             st.progress(float(probability))
 
-        # ── SHAP Explanation ──────────────────────────────────────────────────
         st.markdown("---")
         st.subheader("🔍 Why this prediction? (SHAP)")
 
@@ -187,7 +180,6 @@ def show():
         except Exception as e:
             st.warning(f"SHAP explanation unavailable: {e}")
 
-        # ── LIME Explanation ──────────────────────────────────────────────────
         st.markdown("---")
         st.subheader("🔍 Why this prediction? (LIME)")
 
@@ -196,7 +188,6 @@ def show():
 
             rf_model = joblib.load(f"{MODELS_DIR}rf_heart.joblib")
 
-            # Use real training data for LIME (not random dummy data)
             X_train = load_training_data()
             if X_train is None:
                 st.warning("Training data not found. Please re-run `python src/models/train_heart.py` to save training data for LIME.")
@@ -214,7 +205,6 @@ def show():
         except Exception as e:
             st.warning(f"LIME explanation unavailable: {e}")
 
-        # ── What-If Analysis ──────────────────────────────────────────────────
         st.markdown("---")
         st.subheader("🔄 What-If Analysis")
 

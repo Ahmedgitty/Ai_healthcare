@@ -1,7 +1,4 @@
 """
-Diabetes Page — Streamlit Dashboard
-Member 5's responsibility
-
 Shows:
 - Patient input sliders
 - Risk prediction + probability
@@ -17,7 +14,6 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-# Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 FEATURE_NAMES = [
@@ -28,7 +24,6 @@ FEATURE_NAMES = [
 MODELS_DIR = "models/saved_models/"
 
 # Base validation rules:
-# In the Pima dataset, these fields had impossible zeros treated as missing.
 VALIDATION_RULES = {
     "Glucose": (1, 200),
     "BloodPressure": (1, 122),
@@ -68,7 +63,6 @@ def show():
         st.error("⚠️ Model not found. Please run `python src/models/train_diabetes.py` first.")
         return
 
-    # ── Patient Input ──────────────────────────────────────────────────────────
     st.markdown("### 📋 Patient Information")
     input_container = st.container(border=True)
     col1, col2 = input_container.columns(2)
@@ -88,7 +82,6 @@ def show():
     patient_input = np.array([[pregnancies, glucose, blood_pressure, skin_thickness,
                                insulin, bmi, dpf, age]])
 
-    # ── Prediction ────────────────────────────────────────────────────────────
     st.markdown("---")
     if st.button("🔍 Predict Diabetes Risk", type="primary", key="d_predict"):
         # Defensive validation in addition to slider bounds.
@@ -156,7 +149,7 @@ def show():
         except Exception as e:
             st.warning(f"SHAP explanation unavailable: {e}")
 
-        # ── LIME Explanation ──────────────────────────────────────────────────
+        # ── LIME Explanation 
         st.markdown("---")
         st.subheader("🔍 Why this prediction? (LIME)")
         st.markdown("LIME fits a simple model locally to explain this specific prediction.")
@@ -166,7 +159,6 @@ def show():
 
             rf_model = joblib.load(f"{MODELS_DIR}rf_diabetes.joblib")
 
-            # Use real training data for LIME (not random dummy data)
             X_train = load_training_data()
             if X_train is None:
                 st.warning("Training data not found. Please re-run `python src/models/train_diabetes.py` to save training data for LIME.")

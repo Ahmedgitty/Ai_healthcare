@@ -26,17 +26,7 @@ os.makedirs(FIGURES_DIR, exist_ok=True)
 
 
 def create_lime_explainer(X_train, feature_names, class_names=["No Disease", "Disease"]):
-    """
-    Create a LIME TabularExplainer.
-
-    Args:
-        X_train: Training data (numpy array) — LIME uses this to understand feature ranges
-        feature_names: List of feature names
-        class_names: Labels for the two classes
-
-    Returns:
-        LimeTabularExplainer object
-    """
+    
     explainer = lime.lime_tabular.LimeTabularExplainer(
         training_data=X_train,
         feature_names=feature_names,
@@ -48,20 +38,7 @@ def create_lime_explainer(X_train, feature_names, class_names=["No Disease", "Di
 
 
 def explain_patient_lime(lime_explainer, model, patient_data, feature_names, disease_name, patient_index=0):
-    """
-    Generate a LIME explanation for a single patient.
-
-    Args:
-        lime_explainer: LimeTabularExplainer object
-        model: Trained sklearn-compatible model
-        patient_data: 1D numpy array of one patient's features
-        feature_names: List of feature names
-        disease_name: e.g. 'diabetes'
-        patient_index: for naming the saved file
-
-    Returns:
-        lime explanation object
-    """
+    
     explanation = lime_explainer.explain_instance(
         data_row=patient_data,
         predict_fn=model.predict_proba,
@@ -86,18 +63,7 @@ def explain_patient_lime(lime_explainer, model, patient_data, feature_names, dis
 
 
 def get_lime_for_patient(lime_explainer, model, patient_data, feature_names):
-    """
-    Used by the dashboard — returns LIME explanation for a single patient.
-
-    Args:
-        lime_explainer: LimeTabularExplainer
-        model: trained model
-        patient_data: 1D numpy array
-        feature_names: list of feature names
-
-    Returns:
-        List of (feature_condition, weight) tuples for display
-    """
+  
     explanation = lime_explainer.explain_instance(
         data_row=patient_data,
         predict_fn=model.predict_proba,
@@ -107,17 +73,7 @@ def get_lime_for_patient(lime_explainer, model, patient_data, feature_names):
 
 
 def explain_disease_lime(disease_name, model, X_train, X_test, feature_names, num_patients=3):
-    """
-    Full LIME explanation pipeline for one disease.
-
-    Args:
-        disease_name: e.g. 'diabetes'
-        model: trained model
-        X_train: training data (for LIME background)
-        X_test: test data (patients to explain)
-        feature_names: list of feature names
-        num_patients: how many patients to explain (default 3)
-    """
+  
     print(f"\n{'='*50}")
     print(f"  LIME Explanation — {disease_name.upper()}")
     print(f"{'='*50}")
@@ -135,7 +91,6 @@ def explain_disease_lime(disease_name, model, X_train, X_test, feature_names, nu
     return lime_explainer
 
 
-# ── Run directly to generate LIME plots ──────────────────────────────────────
 if __name__ == "__main__":
 
     # ── Diabetes ──────────────────────────────────────────────────────────

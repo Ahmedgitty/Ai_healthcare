@@ -1,8 +1,4 @@
 """
-Kidney Disease Page — Streamlit Dashboard
-Member 5's responsibility
-
-Shows:
 - Patient input (mix of sliders and checkboxes for binary features)
 - Risk prediction + probability
 - SHAP waterfall plot
@@ -19,7 +15,6 @@ import sys
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
-# Feature names after preprocessing (24 features, no 'classification')
 FEATURE_NAMES = [
     "age", "bp", "sg", "al", "su",
     "rbc", "pc", "pcc", "ba",
@@ -31,7 +26,6 @@ FEATURE_NAMES = [
 MODELS_DIR = "models/saved_models/"
 
 # Base validation rules for numeric kidney inputs.
-# Preserve clinically meaningful zeros for ordinal markers (al, su).
 KIDNEY_VALIDATION_RULES = {
     "age": (2, 90),
     "bp": (50, 180),
@@ -80,7 +74,6 @@ def show():
         st.error("⚠️ Model not found. Please run `python src/models/train_kidney.py` first.")
         return
 
-    # ── Patient Input ──────────────────────────────────────────────────────────
     st.markdown("### 📋 Patient Information")
 
     input_container = st.container(border=True)
@@ -139,7 +132,6 @@ def show():
         htn_val, dm_val, cad_val, appet_val, pe_val, ane_val
     ]])
 
-    # ── Prediction ────────────────────────────────────────────────────────────
     st.markdown("---")
     if st.button("🔍 Predict Kidney Disease Risk", type="primary", key="k_predict"):
         # Defensive validation in case input bounds are bypassed.
@@ -180,7 +172,6 @@ def show():
         st.session_state["k_patient_scaled"] = patient_scaled
         st.session_state["k_patient_input"] = patient_input
 
-    # ── Display results (from session state) ──────────────────────────────────
     if "k_probability" in st.session_state:
         probability = st.session_state["k_probability"]
         prediction = st.session_state["k_prediction"]
@@ -215,7 +206,6 @@ def show():
         except Exception as e:
             st.warning(f"SHAP explanation unavailable: {e}")
 
-        # ── LIME Explanation ──────────────────────────────────────────────────
         st.markdown("---")
         st.subheader("🔍 Why this prediction? (LIME)")
 
@@ -224,7 +214,6 @@ def show():
 
             rf_model = joblib.load(f"{MODELS_DIR}rf_kidney.joblib")
 
-            # Use real training data for LIME (not random dummy data)
             X_train = load_training_data()
             if X_train is None:
                 st.warning("Training data not found. Please re-run `python src/models/train_kidney.py` to save training data for LIME.")
@@ -242,7 +231,6 @@ def show():
         except Exception as e:
             st.warning(f"LIME explanation unavailable: {e}")
 
-        # ── What-If Analysis ──────────────────────────────────────────────────
         st.markdown("---")
         st.subheader("🔄 What-If Analysis")
 

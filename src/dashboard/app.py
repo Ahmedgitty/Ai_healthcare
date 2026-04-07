@@ -1,7 +1,4 @@
 """
-Streamlit Dashboard — Main Entry Point
-Member 5's responsibility
-
 Run with: streamlit run src/dashboard/app.py
 (from the multi-disease-risk-prediction directory)
 """
@@ -28,7 +25,6 @@ def local_css(file_name):
 
 local_css(os.path.join(os.path.dirname(__file__), "style.css"))
 
-# ── Sidebar Navigation ────────────────────────────────────────────────────────
 st.sidebar.title("🏥 Disease Risk Predictor")
 st.sidebar.markdown("---")
 
