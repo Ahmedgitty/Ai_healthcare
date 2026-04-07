@@ -27,10 +27,20 @@ FEATURE_NAMES = [
 
 MODELS_DIR = "models/saved_models/"
 
+# Base validation rules:
+# In the Pima dataset, these fields had impossible zeros treated as missing.
+VALIDATION_RULES = {
+    "Glucose": (1, 200),
+    "BloodPressure": (1, 122),
+    "SkinThickness": (1, 99),
+    "Insulin": (1, 846),
+    "BMI": (0.1, 67.0),
+}
+
 
 @st.cache_resource
 def load_model_and_scaler():
-    """Load saved model and scaler. Cached so it only loads once."""
+    
     try:
         model = joblib.load(f"{MODELS_DIR}ensemble_diabetes.joblib")
         scaler = joblib.load(f"{MODELS_DIR}scaler_diabetes.joblib")
@@ -41,7 +51,6 @@ def load_model_and_scaler():
 
 @st.cache_resource
 def load_training_data():
-    """Load saved training data for LIME explainability."""
     try:
         X_train = np.load(f"{MODELS_DIR}X_train_diabetes.npy")
         return X_train
@@ -66,13 +75,13 @@ def show():
 
     with col1:
         pregnancies = st.slider("Pregnancies", 0, 17, 3, key="d_preg")
-        glucose = st.slider("Glucose (mg/dL)", 0, 200, 120, key="d_gluc")
-        blood_pressure = st.slider("Blood Pressure (mm Hg)", 0, 122, 70, key="d_bp")
-        skin_thickness = st.slider("Skin Thickness (mm)", 0, 99, 20, key="d_skin")
+        glucose = st.slider("Glucose (mg/dL)", 1, 200, 120, key="d_gluc")
+        blood_pressure = st.slider("Blood Pressure (mm Hg)", 1, 122, 70, key="d_bp")
+        skin_thickness = st.slider("Skin Thickness (mm)", 1, 99, 20, key="d_skin")
 
     with col2:
-        insulin = st.slider("Insulin (mu U/ml)", 0, 846, 80, key="d_ins")
-        bmi = st.slider("BMI", 0.0, 67.0, 25.0, step=0.1, key="d_bmi")
+        insulin = st.slider("Insulin (mu U/ml)", 1, 846, 80, key="d_ins")
+        bmi = st.slider("BMI", 0.1, 67.0, 25.0, step=0.1, key="d_bmi")
         dpf = st.slider("Diabetes Pedigree Function", 0.0, 2.5, 0.5, step=0.01, key="d_dpf")
         age = st.slider("Age", 21, 81, 30, key="d_age")
 
@@ -82,6 +91,25 @@ def show():
     # ── Prediction ────────────────────────────────────────────────────────────
     st.markdown("---")
     if st.button("🔍 Predict Diabetes Risk", type="primary", key="d_predict"):
+        # Defensive validation in addition to slider bounds.
+        checks = {
+            "Glucose": glucose,
+            "BloodPressure": blood_pressure,
+            "SkinThickness": skin_thickness,
+            "Insulin": insulin,
+            "BMI": bmi,
+        }
+        invalid = []
+        for feature, value in checks.items():
+            min_val, max_val = VALIDATION_RULES[feature]
+            if not (min_val <= value <= max_val):
+                invalid.append(f"{feature} must be between {min_val} and {max_val}.")
+
+        if invalid:
+            for msg in invalid:
+                st.error(msg)
+            return
+
         patient_scaled = scaler.transform(patient_input)
         probability = model.predict_proba(patient_scaled)[0][1]
         prediction = model.predict(patient_scaled)[0]

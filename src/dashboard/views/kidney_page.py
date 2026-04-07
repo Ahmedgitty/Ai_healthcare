@@ -30,6 +30,25 @@ FEATURE_NAMES = [
 
 MODELS_DIR = "models/saved_models/"
 
+# Base validation rules for numeric kidney inputs.
+# Preserve clinically meaningful zeros for ordinal markers (al, su).
+KIDNEY_VALIDATION_RULES = {
+    "age": (2, 90),
+    "bp": (50, 180),
+    "sg": (1.005, 1.025),
+    "al": (0, 5),
+    "su": (0, 5),
+    "bgr": (22, 490),
+    "bu": (1, 400),
+    "sc": (0.4, 15.0),
+    "sod": (100, 163),
+    "pot": (2.5, 47.0),
+    "hemo": (3.0, 18.0),
+    "pcv": (9, 54),
+    "wc": (2200, 26400),
+    "rc": (2.1, 8.0),
+}
+
 
 @st.cache_resource
 def load_model_and_scaler():
@@ -123,6 +142,34 @@ def show():
     # ── Prediction ────────────────────────────────────────────────────────────
     st.markdown("---")
     if st.button("🔍 Predict Kidney Disease Risk", type="primary", key="k_predict"):
+        # Defensive validation in case input bounds are bypassed.
+        checks = {
+            "age": age,
+            "bp": bp,
+            "sg": sg,
+            "al": al,
+            "su": su,
+            "bgr": bgr,
+            "bu": bu,
+            "sc": sc,
+            "sod": sod,
+            "pot": pot,
+            "hemo": hemo,
+            "pcv": pcv,
+            "wc": wc,
+            "rc": rc,
+        }
+        invalid = []
+        for feature, value in checks.items():
+            min_val, max_val = KIDNEY_VALIDATION_RULES[feature]
+            if not (min_val <= value <= max_val):
+                invalid.append(f"{feature} must be between {min_val} and {max_val}.")
+
+        if invalid:
+            for msg in invalid:
+                st.error(msg)
+            return
+
         patient_scaled = scaler.transform(patient_input)
         probability = model.predict_proba(patient_scaled)[0][1]
         prediction = model.predict(patient_scaled)[0]

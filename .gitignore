@@ -15,7 +15,7 @@ env/
 # ── Jupyter Notebooks ────────────────────────────────
 .ipynb_checkpoints/
 
-# ── Data (raw & processed – too large for Git) ───────
+# ── Data ───────
 # data/raw/
 # data/processed/
 

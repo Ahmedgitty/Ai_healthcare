@@ -29,6 +29,17 @@ FEATURE_NAMES = [
 
 MODELS_DIR = "models/saved_models/"
 
+# Base validation rules for numeric heart inputs.
+# Keep medically plausible bounds and allow valid zero values where appropriate.
+HEART_VALIDATION_RULES = {
+    "Age": (20, 80),
+    "RestBP": (80, 200),
+    "Chol": (100, 600),
+    "MaxHR": (60, 210),
+    "Oldpeak": (0.0, 7.0),
+    "Ca": (0, 3),
+}
+
 
 @st.cache_resource
 def load_model_and_scaler():
@@ -111,6 +122,26 @@ def show():
     # ── Prediction ────────────────────────────────────────────────────────────
     st.markdown("---")
     if st.button("🔍 Predict Heart Disease Risk", type="primary", key="h_predict"):
+        # Defensive validation in case session state/input is manipulated.
+        checks = {
+            "Age": age,
+            "RestBP": rest_bp,
+            "Chol": chol,
+            "MaxHR": max_hr,
+            "Oldpeak": oldpeak,
+            "Ca": ca,
+        }
+        invalid = []
+        for feature, value in checks.items():
+            min_val, max_val = HEART_VALIDATION_RULES[feature]
+            if not (min_val <= value <= max_val):
+                invalid.append(f"{feature} must be between {min_val} and {max_val}.")
+
+        if invalid:
+            for msg in invalid:
+                st.error(msg)
+            return
+
         patient_scaled = scaler.transform(patient_input)
         probability = model.predict_proba(patient_scaled)[0][1]
         prediction = model.predict(patient_scaled)[0]
