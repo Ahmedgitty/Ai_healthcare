@@ -22,6 +22,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+
+local_css(os.path.join(os.path.dirname(__file__), "style.css"))
+
 # ── Sidebar Navigation ────────────────────────────────────────────────────────
 st.sidebar.title("🏥 Disease Risk Predictor")
 st.sidebar.markdown("---")
@@ -40,7 +46,8 @@ st.sidebar.markdown("- Streamlit")
 
 # ── Page Routing ──────────────────────────────────────────────────────────────
 if page == "🏠 Home":
-    st.title("🏥 Explainable Multi-Disease Risk Prediction System")
+    st.markdown("<div class='title-gradient'>🏥 Explainable Risk Predictor</div>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #64748B; margin-bottom: 30px;'>Multi-Disease AI Diagnostic System</h4>", unsafe_allow_html=True)
     st.markdown("---")
 
     col1, col2, col3 = st.columns(3)

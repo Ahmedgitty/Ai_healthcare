@@ -17,6 +17,7 @@ Steps:
 6. Apply SMOTE for class imbalance
 7. Scale features
 """
+#aiprojectheartdisease
 
 import pandas as pd
 import numpy as np

@@ -51,7 +51,7 @@ def load_training_data():
 
 
 def show():
-    st.title("❤️ Heart Disease Risk Prediction")
+    st.markdown("<div class='title-gradient'>❤️ Heart Disease Risk Prediction</div>", unsafe_allow_html=True)
     st.markdown("Enter patient details below to predict heart disease risk.")
     st.markdown("---")
 
@@ -61,8 +61,9 @@ def show():
         return
 
     # ── Patient Input ──────────────────────────────────────────────────────────
-    st.subheader("Patient Information")
-    col1, col2, col3 = st.columns(3)
+    st.markdown("### 📋 Patient Information")
+    input_container = st.container(border=True)
+    col1, col2, col3 = input_container.columns(3)
 
     with col1:
         age = st.slider("Age", 20, 80, 55, key="h_age")

@@ -52,7 +52,7 @@ def load_training_data():
 
 
 def show():
-    st.title("🫘 Kidney Disease Risk Prediction")
+    st.markdown("<div class='title-gradient'>🫘 Kidney Disease Risk Prediction</div>", unsafe_allow_html=True)
     st.markdown("Enter patient details below to predict chronic kidney disease (CKD) risk.")
     st.markdown("---")
 
@@ -62,9 +62,10 @@ def show():
         return
 
     # ── Patient Input ──────────────────────────────────────────────────────────
-    st.subheader("Patient Information")
+    st.markdown("### 📋 Patient Information")
 
-    col1, col2, col3 = st.columns(3)
+    input_container = st.container(border=True)
+    col1, col2, col3 = input_container.columns(3)
 
     with col1:
         st.markdown("**Demographics & Vitals**")
